@@ -631,12 +631,13 @@ button:focus{outline:none}
 </div>
 
 <script type="module">
-import { initializeApp }                              from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-import { getAnalytics }                               from "https://www.gstatic.com/firebasejs/12.12.1/firebase-analytics.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-analytics.js";
+import { getRedirectResult } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
 import {
   getAuth, onAuthStateChanged,
   signInWithEmailAndPassword, createUserWithEmailAndPassword,
-  signInWithPopup, GoogleAuthProvider,
+  signInWithRedirect, getRedirectResult, GoogleAuthProvider,
   signOut, updateProfile
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
 import {
@@ -689,9 +690,6 @@ let currentUser = null;
 let firestoreUnsubscribe = null;
 let muted = false, prevVol = 75;
 
-// ══════════════════════════════════════════════════════
-//  AUTH
-// ══════════════════════════════════════════════════════
 let authMode = 'login';
 
 function switchAuthTab(mode) {
@@ -730,7 +728,7 @@ async function googleSignIn() {
   clearAuthError();
   try {
     const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    await signInWithRedirect(auth, provider);
   } catch(e) { showAuthError(friendlyAuthError(e.code)); }
 }
 window.googleSignIn = googleSignIn;
