@@ -644,9 +644,15 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 async function getFirebaseConfig() {
+  const cached = sessionStorage.getItem('fb_cfg');
+  if (cached) {
+    return JSON.parse(cached);
+  }
   const res = await fetch('/api/firebase-config');
   if (!res.ok) throw new Error('Failed to load config');
-  return res.json();
+  const config = await res.json();
+  sessionStorage.setItem('fb_cfg', JSON.stringify(config));
+  return config;
 }
 
 const firebaseConfig = await getFirebaseConfig();
@@ -657,6 +663,9 @@ const db        = getFirestore(app);
 
 try {
   await getRedirectResult(auth);
+  if (result?.user) {
+    console.log('Signed in via redirect:', result.user.displayName);
+  }
 } catch (error) {
   console.error('Error occurred while checking redirect result:', error);
 }
