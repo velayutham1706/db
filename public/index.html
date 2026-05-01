@@ -636,7 +636,7 @@ import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.1/firebas
 import {
   getAuth, onAuthStateChanged,
   signInWithEmailAndPassword, createUserWithEmailAndPassword,
-  signInWithRedirect, getRedirectResult, GoogleAuthProvider,
+  signInWithPopup, GoogleAuthProvider,
   signOut, updateProfile
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
 import {
@@ -660,15 +660,6 @@ const app       = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth      = getAuth(app);
 const db        = getFirestore(app);
-
-try {
-  const result = await getRedirectResult(auth);
-  if (result?.user) {
-    console.log('Signed in via redirect:', result.user.displayName);
-  }
-} catch (error) {
-  console.error('Error occurred while checking redirect result:', error);
-}
 
 // ── TRACKS ──
 const tracks = [
@@ -742,8 +733,13 @@ async function googleSignIn() {
   clearAuthError();
   try {
     const provider = new GoogleAuthProvider();
-    await signInWithRedirect(auth, provider);
-  } catch(e) { showAuthError(friendlyAuthError(e.code)); }
+    provider.setCustomParameters({ prompt: 'select_account' });
+    await signInWithPopup(auth, provider);
+  } catch(e) { 
+    if (e.code !== 'auth/popup-closed-by-user') {
+      showAuthError(friendlyAuthError(e.code)); 
+    }
+  }
 }
 window.googleSignIn = googleSignIn;
 
@@ -804,9 +800,6 @@ onAuthStateChanged(auth, user => {
 function requireAuth(fn) { if (!currentUser) { showToast('Please sign in first'); return; } fn(); }
 window.requireAuth = requireAuth;
 
-// ══════════════════════════════════════════════════════
-//  FIRESTORE SYNC
-// ══════════════════════════════════════════════════════
 function setSyncStatus(status) {
   const dot = document.getElementById('sync-dot'); if(!dot) return;
   dot.className = 'sync-dot' + (status==='syncing'?' syncing':status==='synced'?' synced':'');
