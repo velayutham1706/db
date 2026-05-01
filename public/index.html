@@ -662,7 +662,7 @@ const auth      = getAuth(app);
 const db        = getFirestore(app);
 
 try {
-  await getRedirectResult(auth);
+  const result = await getRedirectResult(auth);
   if (result?.user) {
     console.log('Signed in via redirect:', result.user.displayName);
   }
@@ -1126,7 +1126,7 @@ function lazyLoadCover(trackId, onDone) {
       if (tags.artist) t.artist = tags.artist.trim();
       if (tags.genre) t.genre = tags.genre.trim();
       if (tags.album) t.id3Album = tags.album.trim();
-      if (tags.TPE2) t.id3AlbumArtist = tags.TPE2.trim();
+      if (tags.TPE2) t.id3AlbumArtist = (tags.TPE2.data || tags.TPE2).toString().trim();
       const pic = tags.picture;
       if (pic) {
         const blob = new Blob([new Uint8Array(pic.data)], { type: pic.format });
