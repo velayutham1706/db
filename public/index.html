@@ -662,19 +662,6 @@ const auth      = getAuth(app);
 const db        = getFirestore(app);
 let _googleSignInPending = false;
 
-try {
-  const result = await getRedirectResult(auth);
-  if (result?.user) {
-    console.log('Redirect sign-in success:', result.user.email);
-    // onAuthStateChanged will fire automatically after this
-  }
-} catch(e) {
-  console.error('Redirect result error:', e.code, e.message);
-  if (e.code !== 'auth/popup-closed-by-user') {
-    showAuthError(friendlyAuthError(e.code));
-  }
-}
-
 // ── TRACKS ──
 const tracks = [
   {id:0,title:"Still With You",artist:"Jung Kook",genre:"K-Pop",language:"Korean",liked:false,url:"https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776835904/Still_With_You_-_Jung_Kook_sglpgx.mp3",coverUrl:null,album:"Golden"},
@@ -1559,6 +1546,19 @@ window.openAddToPlaylist     = openAddToPlaylist;
 window.closeAddToPlaylist    = closeAddToPlaylist;
 window.addTrackToPlaylist    = addTrackToPlaylist;
 window.handleSearch          = handleSearch;
+
+try {
+  const result = await getRedirectResult(auth);
+  if (result?.user) {
+    console.log('Redirect sign-in success:', result.user.email);
+    // onAuthStateChanged will fire automatically after this
+  }
+} catch(e) {
+  console.error('Redirect result error:', e.code, e.message);
+  if (e.code !== 'auth/popup-closed-by-user') {
+    showAuthError(friendlyAuthError(e.code));
+  }
+}
 
 // ── INIT ──
 renderSidebars();
