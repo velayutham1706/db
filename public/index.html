@@ -636,7 +636,7 @@ import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.1/firebas
 import {
   getAuth, onAuthStateChanged,
   signInWithEmailAndPassword, createUserWithEmailAndPassword,
-  signInWithPopup, GoogleAuthProvider,
+  signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider,
   signOut, updateProfile
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
 import {
@@ -730,17 +730,23 @@ async function authSubmit() {
 }
 window.authSubmit = authSubmit;
 
+getRedirectResult(auth).catch(() => {}); // Handle redirect result for Google Sign-In (if used)
+
 async function googleSignIn() {
-  if (_googleSignInPending) return; // Prevent multiple popups
+  if (_googleSignInPending) return;
   _googleSignInPending = true;
   clearAuthError();
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
   try {
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
     await signInWithPopup(auth, provider);
-  } catch(e) { 
-    if (e.code !== 'auth/popup-closed-by-user') {
-      showAuthError(friendlyAuthError(e.code)); 
+  } catch(e) {
+    if (e.code === 'auth/popup-blocked') {
+      // Fallback to redirect if popup is blocked
+      const { signInWithRedirect } = await import("https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js");
+      await signInWithRedirect(auth, provider);
+    } else if (e.code !== 'auth/popup-closed-by-user') {
+      showAuthError(friendlyAuthError(e.code));
     }
   } finally {
     _googleSignInPending = false;
