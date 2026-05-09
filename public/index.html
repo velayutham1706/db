@@ -662,6 +662,16 @@ const auth      = getAuth(app);
 const db        = getFirestore(app);
 let _googleSignInPending = false;
 
+getRedirectResult(auth).then(result => {
+  if (result?.user) {
+    // onAuthStateChanged will handle this
+  }
+}).catch(e => {
+  if (e.code !== 'auth/popup-closed-by-user') {
+    showAuthError(friendlyError(e.code));
+  }
+});
+
 // ── TRACKS ──
 const tracks = [
   {id:0,title:"Still With You",artist:"Jung Kook",genre:"K-Pop",language:"Korean",liked:false,url:"https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776835904/Still_With_You_-_Jung_Kook_sglpgx.mp3",coverUrl:null,album:"Golden"},
@@ -730,8 +740,6 @@ async function authSubmit() {
 }
 window.authSubmit = authSubmit;
 
-getRedirectResult(auth).catch(() => {}); // Handle redirect result for Google Sign-In (if used)
-
 async function googleSignIn() {
   if (_googleSignInPending) return;
   _googleSignInPending = true;
@@ -739,19 +747,15 @@ async function googleSignIn() {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   try {
-    await signInWithPopup(auth, provider);
+    await signInWithRedirect(auth, provider);
   } catch(e) {
-    if (e.code === 'auth/popup-blocked') {
-      // Fallback to redirect if popup is blocked
-      const { signInWithRedirect } = await import("https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js");
-      await signInWithRedirect(auth, provider);
-    } else if (e.code !== 'auth/popup-closed-by-user') {
+    if (e.code !== 'auth/popup-closed-by-user') {
       showAuthError(friendlyAuthError(e.code));
     }
-  } finally {
     _googleSignInPending = false;
   }
 }
+
 document.getElementById('google-signin-btn').addEventListener('click', googleSignIn);
 window.googleSignIn = googleSignIn;
 
