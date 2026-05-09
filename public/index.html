@@ -662,15 +662,18 @@ const auth      = getAuth(app);
 const db        = getFirestore(app);
 let _googleSignInPending = false;
 
-getRedirectResult(auth).then(result => {
+try {
+  const result = await getRedirectResult(auth);
   if (result?.user) {
-    // onAuthStateChanged will handle this
+    console.log('Redirect sign-in success:', result.user.email);
+    // onAuthStateChanged will fire automatically after this
   }
-}).catch(e => {
+} catch(e) {
+  console.error('Redirect result error:', e.code, e.message);
   if (e.code !== 'auth/popup-closed-by-user') {
-    showAuthError(friendlyError(e.code));
+    showAuthError(friendlyAuthError(e.code));
   }
-});
+}
 
 // ── TRACKS ──
 const tracks = [
