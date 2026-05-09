@@ -644,14 +644,18 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 async function getFirebaseConfig() {
-  const cached = sessionStorage.getItem('fb_cfg');
-  if (cached) {
-    return JSON.parse(cached);
-  }
+  try {
+    const cached = sessionStorage.getItem('fb_cfg');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && parsed.apiKey) return parsed; // only use if valid
+    }
+  } catch(e) { /* ignore bad cache */ }
+
   const res = await fetch('/api/firebase-config');
-  if (!res.ok) throw new Error('Failed to load config');
+  if (!res.ok) throw new Error('Failed to load Firebase config: ' + res.status);
   const config = await res.json();
-  sessionStorage.setItem('fb_cfg', JSON.stringify(config));
+  try { sessionStorage.setItem('fb_cfg', JSON.stringify(config)); } catch(e) {}
   return config;
 }
 
