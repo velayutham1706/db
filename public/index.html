@@ -2328,7 +2328,7 @@
       signOut, updateProfile
     } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
     import {
-      getFirestore, doc, setDoc, onSnapshot
+      getFirestore, doc, setDoc, onSnapshot, getDocs, collection, query, orderBy
     } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
     /*
@@ -2366,28 +2366,18 @@
       db = getFirestore(app);
 
       // ── TRACKS ──
-      const tracks = [
-        { id: 0, title: "Still With You", artist: "Jung Kook", genre: "K-Pop", language: "Korean", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776835904/Still_With_You_-_Jung_Kook_sglpgx.mp3", coverUrl: null, album: "Golden" },
-        { id: 1, title: "Hookah Bar", artist: "Himesh Reshammiya", genre: "Bollywood", language: "Hindi", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776835905/Hookah_Bar_-_Himesh_Reshammiya_Vineet_Singh_Aaman_Trikha_kdpslv.mp3", coverUrl: null, album: "Khiladi 786" },
-        { id: 2, title: "Euphoria", artist: "BTS", genre: "K-Pop", language: "Korean", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776841150/Blue_Eyes_-_Yo_Yo_Honey_Singh_wowhl8.mp3", coverUrl: null, album: "Love Yourself" },
-        { id: 3, title: "Sunn Raha Hai", artist: "Ankit Tiwari", genre: "Bollywood", language: "Hindi", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776838437/Sunn_Raha_Hai_-_Ankit_Tiwari_jygjdu.mp3", coverUrl: null, album: "Aashiqui 2" },
-        { id: 4, title: "Dandelions", artist: "Ruth B", genre: "Pop", language: "English", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776838516/Dandelions_-_Ruth_B_c6jhb1.mp3", coverUrl: null, album: "Safe Haven" },
-        { id: 5, title: "Chammak Challo", artist: "Akon", genre: "Bollywood", language: "Hindi", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776838949/Chammak_Challo_-_Akon_Hamsika_Iyer_ui76ib.mp3", coverUrl: null, album: "Ra.One" },
-        { id: 6, title: "Euphoria", artist: "BTS", genre: "K-Pop", language: "Korean", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776839124/Euphoria_-_Bts_pkrv1z.mp3", coverUrl: null, album: "Love Yourself" },
-        { id: 7, title: "Make It Right", artist: "BTS", genre: "K-Pop", language: "Korean", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776841047/Make_It_Right_feat_Lauv_-_Bts_hytsuw.mp3", coverUrl: null, album: "Map of the Soul" },
-        { id: 8, title: "Desi Boyz", artist: "Pritam", genre: "Bollywood", language: "Hindi", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776841777/Make_Some_Noise_For_The_Desi_Boyz_-_Pritam_Kk_Bob_xdq0bb.mp3", coverUrl: null, album: "Desi Boyz" },
-        { id: 9, title: "Kanave Kanave", artist: "David Bowie", genre: "Tamil", language: "Tamil", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776770045/Kanave_Kanave_1_fb4jqs.mp3", coverUrl: null, album: "David OST" },
-        { id: 10, title: "Closer", artist: "The Chainsmokers", genre: "Romantic", language: "English", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776844229/Closer_feat_Halsey_-_The_Chainsmokers_aoyjgh.mp3", coverUrl: null, album: "Collage" },
-        { id: 11, title: "Akhiyaan Gulaab", artist: "Mitraz", genre: "Bollywood", language: "Hindi", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776856231/Akhiyaan_Gulaab_from_teri_Baaton_Mein_Aisa_Uljha_Jiya_-_Mitraz_fiouh7.mp3", coverUrl: null, album: "Teri Baaton Mein" },
-        { id: 12, title: "A Thousand Years", artist: "Christina Perri", genre: "Romantic", language: "English", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776856377/A_Thousand_Years_-_Christina_Perri_au0xwd.mp3", coverUrl: null, album: "Breaking Dawn" },
-        { id: 13, title: "Enna Sona", artist: "AR Rahman", genre: "Romantic", language: "Hindi", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776861209/Enna_Sona_-_Ar_Rahman_Arijit_Singh_c5mfzi.mp3", coverUrl: null, album: "Ok Jaanu" },
-        { id: 14, title: "Let Me Love You", artist: "DJ Snake", genre: "Romantic", language: "English", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776856872/Let_Me_Love_You_feat._Justin_Bieber_-_DJ_Snake_obxwea.mp3", coverUrl: null, album: "Encore" },
-        { id: 15, title: "Kalade Nimageega", artist: "SP Balasubrahmanyam", genre: "Romantic", language: "Kannada", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776861211/Kalade_Nimageega_-_Sp_Balasubrahmanyam_urpnjh.mp3", coverUrl: null, album: "Kannada Classics" },
-        { id: 16, title: "Ninagende Visheshavaada Maahithi", artist: "Kunal Ganjawala", genre: "Romantic", language: "Kannada", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776861215/Ninagende_Visheshavaada_Maahithi_-_Kunal_Ganjawala_Hamsika_Iyer_Jayanth_Kaikini_ogz9t0.mp3", coverUrl: null, album: "Kannada Classics" },
-        { id: 17, title: "Ride It", artist: "Kunal Ganjawala", genre: "Romantic", language: "English", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776920773/Ride_It_-_Jay_Sean_b4hhlb.mp3", coverUrl: null, album: "Kannada Classics" },
-        { id: 18, title: "Sugar & Brownies", artist: "Kunal Ganjawala", genre: "Dance", language: "English", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776920778/Sugar_Brownies_-_Dharia_dr1rii.mp3", coverUrl: null, album: "Kannada Classics" },
-        { id: 19, title: "Cheap Thrills", artist: "Kunal Ganjawala", genre: "Dance", language: "English", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776920782/Cheap_Thrills_-_Sia_hnrwiv.mp3", coverUrl: null, album: "Kannada Classics" },
-      ];
+      let tracks = [];
+
+      async function loadTracks() {
+        try {
+          const q = query(collection(db, 'tracks'), orderBy('order', 'asc'));
+          const snap = await getDocs(q);
+          tracks = snap.docs.map(d => ({ ...d.data(), id: d.data().id ?? parseInt(d.id), liked: false }));
+        } catch (e) {
+          console.error('Failed to load tracks:', e);
+          tracks = [];
+        }
+      }
 
       let playlists = [];
       let curIdx = 0, playing = false, shuffle = false, repeat = 0, curView = 'home';
@@ -3271,11 +3261,13 @@
       window.handleSearch = handleSearch;
 
       // ── INIT ──
-      renderSidebars();
-      renderMain();
-      renderUpNext();
-      updateNowPlaying();
-      prefetchDurations();
+      loadTracks().then(() => {
+        renderSidebars();
+        renderMain();
+        renderUpNext();
+        updateNowPlaying();
+        prefetchDurations();
+      });
     }
 
     const cached = sessionStorage.getItem('fb_cfg');

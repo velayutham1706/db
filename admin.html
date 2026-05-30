@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DB Hi-Fi Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box }
+    :root { --ink:#0a0a0a; --bg:#fff; --bg2:#f4f4f4; --muted:#888; --border:#d0d0d0; --red:#c00 }
+    body { font-family:'JetBrains Mono',monospace; background:var(--bg2); color:var(--ink); min-height:100vh }
+    .header { background:var(--ink); color:#fff; padding:16px 24px; display:flex; justify-content:space-between; align-items:center }
+    .header h1 { font-size:16px; letter-spacing:3px; text-transform:uppercase }
+    .container { max-width:900px; margin:0 auto; padding:24px }
+    .card { background:var(--bg); border:2px solid var(--ink); margin-bottom:20px; overflow:hidden }
+    .card-header { background:var(--ink); color:#fff; padding:12px 16px; font-size:11px; letter-spacing:2px; text-transform:uppercase }
+    .card-body { padding:20px }
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px }
+    .form-group { display:flex; flex-direction:column; gap:6px }
+    .form-group.full { grid-column:1/-1 }
+    label { font-size:8px; letter-spacing:2px; text-transform:uppercase; color:var(--muted) }
+    input, select { border:2px solid var(--border); background:var(--bg); font-family:'JetBrains Mono',monospace; font-size:12px; padding:9px 12px; color:var(--ink); outline:none; width:100%; transition:.15s }
+    input:focus, select:focus { border-color:var(--ink) }
+    .btn { padding:10px 20px; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase; cursor:pointer; border:2px solid var(--ink); transition:.15s }
+    .btn-primary { background:var(--ink); color:#fff }
+    .btn-primary:hover { background:#333 }
+    .btn-primary:disabled { opacity:.5; cursor:not-allowed }
+    .btn-danger { background:transparent; color:var(--red); border-color:var(--red) }
+    .btn-danger:hover { background:var(--red); color:#fff }
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; padding:10px 20px; font-size:11px; letter-spacing:1px; opacity:0; transition:.25s; pointer-events:none; z-index:1000 }
+    .toast.show { opacity:1 }
+    table { width:100%; border-collapse:collapse }
+    th { font-size:8px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); padding:8px 12px; text-align:left; border-bottom:2px solid var(--ink); background:var(--bg2) }
+    td { padding:10px 12px; border-bottom:1px solid var(--border); font-size:11px; vertical-align:middle }
+    tr:hover td { background:var(--bg2) }
+    .url-cell { max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted) }
+    .order-input { width:50px; border:1px solid var(--border); padding:4px 6px; font-family:'JetBrains Mono',monospace; font-size:11px; text-align:center }
+    .auth-wall { position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; align-items:center; justify-content:center; z-index:9999 }
+    .auth-box { background:#fff; border:2px solid var(--ink); padding:32px; width:320px }
+    .auth-box h2 { font-size:14px; letter-spacing:2px; text-transform:uppercase; margin-bottom:20px }
+    .loading { color:var(--muted); font-size:11px; padding:20px; text-align:center; letter-spacing:1px }
+    .badge { font-size:8px; letter-spacing:1px; border:1px solid var(--border); padding:2px 6px; text-transform:uppercase; display:inline-block }
+    @media(max-width:600px) { .form-grid { grid-template-columns:1fr } .form-group.full { grid-column:1 } }
+  </style>
+</head>
+<body>
+
+<div class="auth-wall" id="auth-wall">
+  <div class="auth-box">
+    <h2>Admin Access</h2>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Password</label>
+      <input type="password" id="admin-pass" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')checkPass()">
+    </div>
+    <div id="pass-err" style="color:#c00;font-size:10px;margin-bottom:10px;display:none">Incorrect password</div>
+    <button class="btn btn-primary" onclick="checkPass()">Enter</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="header">
+  <h1>DB Hi-Fi — Track Manager</h1>
+  <span id="track-count" style="font-size:10px;opacity:.5;letter-spacing:1px"></span>
+</div>
+
+<div class="container">
+  <!-- ADD TRACK FORM -->
+  <div class="card">
+    <div class="card-header">Add New Track</div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Cloudinary Audio URL *</label>
+          <input type="url" id="f-url" placeholder="https://res.cloudinary.com/..." oninput="extractFromUrl(this.value)">
+        </div>
+        <div class="form-group">
+          <label>Title *</label>
+          <input type="text" id="f-title" placeholder="Song title">
+        </div>
+        <div class="form-group">
+          <label>Artist *</label>
+          <input type="text" id="f-artist" placeholder="Artist name">
+        </div>
+        <div class="form-group">
+          <label>Album</label>
+          <input type="text" id="f-album" placeholder="Album name">
+        </div>
+        <div class="form-group">
+          <label>Genre</label>
+          <input type="text" id="f-genre" placeholder="Bollywood, K-Pop, Pop...">
+        </div>
+        <div class="form-group">
+          <label>Language</label>
+          <input type="text" id="f-language" placeholder="Hindi, English, Korean...">
+        </div>
+        <div class="form-group">
+          <label>Order (display position)</label>
+          <input type="number" id="f-order" placeholder="1" min="0">
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:10px;align-items:center">
+        <button class="btn btn-primary" id="add-btn" onclick="addTrack()">+ Add Track</button>
+        <button class="btn" onclick="clearForm()" style="background:transparent">Clear</button>
+        <span id="add-status" style="font-size:10px;color:var(--muted)"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRACK LIST -->
+  <div class="card">
+    <div class="card-header">All Tracks</div>
+    <div id="track-list-wrap">
+      <div class="loading">Loading tracks...</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+  import {
+    getFirestore, collection, getDocs, addDoc, deleteDoc, updateDoc,
+    doc, query, orderBy, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+  // ── AUTH WALL ──
+  const ADMIN_PASS = '15072003';
+  window.checkPass = function() {
+    const v = document.getElementById('admin-pass').value;
+    if (v === ADMIN_PASS) {
+      document.getElementById('auth-wall').style.display = 'none';
+      init();
+    } else {
+      document.getElementById('pass-err').style.display = 'block';
+    }
+  };
+
+  let db, tracks = [];
+
+  async function init() {
+    const res = await fetch('/api/firebase-config');
+    const config = await res.json();
+    const app = initializeApp(config);
+    db = getFirestore(app);
+    await loadTracks();
+  }
+
+  async function loadTracks() {
+    try {
+      const q = query(collection(db, 'tracks'), orderBy('order', 'asc'));
+      const snap = await getDocs(q);
+      tracks = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+      renderTable();
+      document.getElementById('track-count').textContent = `${tracks.length} tracks`;
+      // Auto-set order for new track
+      const maxOrder = tracks.reduce((m, t) => Math.max(m, t.order || 0), 0);
+      document.getElementById('f-order').value = maxOrder + 1;
+    } catch(e) {
+      document.getElementById('track-list-wrap').innerHTML = `<div class="loading" style="color:#c00">Error: ${e.message}</div>`;
+    }
+  }
+
+  function renderTable() {
+    if (!tracks.length) {
+      document.getElementById('track-list-wrap').innerHTML = '<div class="loading">No tracks yet. Add one above.</div>';
+      return;
+    }
+    document.getElementById('track-list-wrap').innerHTML = `
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th>Order</th><th>Title</th><th>Artist</th><th>Genre</th><th>Language</th><th>Album</th><th>URL</th><th></th>
+          </tr></thead>
+          <tbody>${tracks.map((t, i) => `
+            <tr>
+              <td><input class="order-input" type="number" value="${t.order ?? i}" onchange="updateOrder('${t._docId}', this.value)"></td>
+              <td><strong>${t.title}</strong></td>
+              <td>${t.artist}</td>
+              <td><span class="badge">${t.genre || '—'}</span></td>
+              <td>${t.language || '—'}</td>
+              <td>${t.album || '—'}</td>
+              <td class="url-cell" title="${t.url}">${t.url}</td>
+              <td><button class="btn btn-danger" style="padding:5px 10px;font-size:9px" onclick="deleteTrack('${t._docId}', '${t.title.replace(/'/g,"\\'")}')">✕</button></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  window.addTrack = async function() {
+    const url = document.getElementById('f-url').value.trim();
+    const title = document.getElementById('f-title').value.trim();
+    const artist = document.getElementById('f-artist').value.trim();
+    if (!url || !title || !artist) { toast('URL, Title and Artist are required'); return; }
+
+    const btn = document.getElementById('add-btn');
+    btn.disabled = true;
+    document.getElementById('add-status').textContent = 'Saving...';
+
+    const maxId = tracks.reduce((m, t) => Math.max(m, t.id ?? 0), -1);
+
+    try {
+      await addDoc(collection(db, 'tracks'), {
+        id: maxId + 1,
+        title,
+        artist,
+        album: document.getElementById('f-album').value.trim() || '',
+        genre: document.getElementById('f-genre').value.trim() || '',
+        language: document.getElementById('f-language').value.trim() || '',
+        url,
+        coverUrl: null,
+        order: parseInt(document.getElementById('f-order').value) || maxId + 1,
+        addedAt: serverTimestamp()
+      });
+      toast('Track added!');
+      clearForm();
+      await loadTracks();
+    } catch(e) {
+      toast('Error: ' + e.message);
+    } finally {
+      btn.disabled = false;
+      document.getElementById('add-status').textContent = '';
+    }
+  };
+
+  window.deleteTrack = async function(docId, title) {
+    if (!confirm(`Delete "${title}"?`)) return;
+    try {
+      await deleteDoc(doc(db, 'tracks', docId));
+      toast('Deleted');
+      await loadTracks();
+    } catch(e) { toast('Error: ' + e.message); }
+  };
+
+  window.updateOrder = async function(docId, val) {
+    try {
+      await updateDoc(doc(db, 'tracks', docId), { order: parseInt(val) || 0 });
+      toast('Order updated');
+    } catch(e) { toast('Error: ' + e.message); }
+  };
+
+  // Auto-extract title/artist from Cloudinary filename
+  window.extractFromUrl = function(url) {
+    if (!url.includes('cloudinary.com')) return;
+    const filename = url.split('/').pop().replace(/\.[^.]+$/, '');
+    // Format: Song_Name_-_Artist_Name_abc123
+    const clean = filename.replace(/_[a-z0-9]{6,}$/, '').replace(/_/g, ' ');
+    const parts = clean.split(' - ');
+    if (parts.length >= 2) {
+      if (!document.getElementById('f-title').value) document.getElementById('f-title').value = parts[0].trim();
+      if (!document.getElementById('f-artist').value) document.getElementById('f-artist').value = parts[1].trim();
+    } else {
+      if (!document.getElementById('f-title').value) document.getElementById('f-title').value = clean.trim();
+    }
+  };
+
+  window.clearForm = function() {
+    ['f-url','f-title','f-artist','f-album','f-genre','f-language'].forEach(id => document.getElementById(id).value = '');
+    const maxOrder = tracks.reduce((m, t) => Math.max(m, t.order || 0), 0);
+    document.getElementById('f-order').value = maxOrder + 1;
+  };
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+</script>
+</body>
+</html>
