@@ -753,7 +753,7 @@
       font-size: 8px;
       letter-spacing: 3px;
       text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.3);
+      color: rgba(255, 255, 255, 0.8);
       margin-bottom: 14px
     }
 
@@ -2133,7 +2133,7 @@
       </div>
       <div style="padding:14px;border-top:1px solid rgba(255,255,255,0.08)">
         <div
-          style="font-size:8px;letter-spacing:2px;color:rgba(255,255,255,0.2);margin-bottom:7px;text-transform:uppercase">
+          style="font-size:8px;letter-spacing:2px;color:rgba(255,255,255,0.7);margin-bottom:7px;text-transform:uppercase">
           Up Next</div>
         <div id="up-next-mini"></div>
       </div>
@@ -3119,7 +3119,7 @@
 
       function renderUpNext() {
         const el = document.getElementById('up-next-mini'); if (!el) return;
-        if (shuffle) { el.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,0.2);letter-spacing:1px;text-align:center;padding:6px 0">Shuffle — random order</div>'; return; }
+        if (shuffle) { el.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,0.8);letter-spacing:1px;text-align:center;padding:6px 0">Shuffle — random order</div>'; return; }
         const order = getOrder(); const ci = order.indexOf(curIdx); const next = order.slice(ci + 1, ci + 4);
         el.innerHTML = next.map(ti => {
           const t = tracks[ti];
