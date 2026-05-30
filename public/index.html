@@ -2365,7 +2365,6 @@
       auth = getAuth(app);
       db = getFirestore(app);
 
-
       // ── TRACKS ──
       const tracks = [
         { id: 0, title: "Still With You", artist: "Jung Kook", genre: "K-Pop", language: "Korean", liked: false, url: "https://res.cloudinary.com/dbrwpdrhp/video/upload/v1776835904/Still_With_You_-_Jung_Kook_sglpgx.mp3", coverUrl: null, album: "Golden" },
@@ -2402,20 +2401,6 @@
 
       let authMode = 'login';
 
-      getRedirectResult(auth)
-      .then(result => {
-        if (result?.user) {
-          _googleSignInPending = false;
-        }
-      })
-      .catch(e => {
-        _googleSignInPending = false;
-        if (e.code && e.code !== 'auth/no-current-user') {
-          console.error('Redirect result error:', e.code, e.message);
-          showAuthError(friendlyAuthError(e.code));
-        }
-      });
-
       function switchAuthTab(mode) {
         authMode = mode;
         document.getElementById('tab-login').classList.toggle('active', mode === 'login');
@@ -2448,35 +2433,33 @@
       }
       window.authSubmit = authSubmit;
 
-      function isMobile() {
-        return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
-      }
-
       function googleSignIn() {
         if (_googleSignInPending) return;
         _googleSignInPending = true;
         clearAuthError();
 
+        // Show a loading state on the button
+        const btn = document.getElementById('google-signin-btn');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = `<span style="letter-spacing:1px;font-size:10px">Opening Google...</span>`;
+        btn.disabled = true;
+
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
 
-        if (isMobile()) {
-          signInWithRedirect(auth, provider).catch(e => {
+        signInWithPopup(auth, provider)
+          .then(() => { 
             _googleSignInPending = false;
-            console.error('Google redirect error:', e.code, e.message);
+          })
+          .catch(e => {
+            _googleSignInPending = false;
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+            console.error('Google Sign-In error:', e.code, e.message);
+            if (e.code === 'auth/popup-closed-by-user' ||
+                e.code === 'auth/cancelled-popup-request') return;
             showAuthError(friendlyAuthError(e.code));
           });
-        } else {
-          signInWithPopup(auth, provider)
-            .then(() => { _googleSignInPending = false; })
-            .catch(e => {
-              _googleSignInPending = false;
-              console.error('Google Sign-In error:', e.code, e.message);
-              if (e.code === 'auth/popup-closed-by-user' ||
-                  e.code === 'auth/cancelled-popup-request') return;
-              showAuthError(friendlyAuthError(e.code));
-            });
-        }
       }
 
       document.getElementById('google-signin-btn').addEventListener('click', googleSignIn);
@@ -3297,7 +3280,15 @@
 
     const cached = sessionStorage.getItem('fb_cfg');
     let parsed = null;
-    try { if (cached) { parsed = JSON.parse(cached); if (!parsed?.apiKey) parsed = null; } } catch (e) { }
+    try { 
+      if (cached) { 
+        parsed = JSON.parse(cached); 
+        if (!parsed?.apiKey || parsed?.authDomain !== 'db-hifi.firebaseapp.com') {
+          parsed = null;
+          sessionStorage.removeItem('fb_cfg');
+        }
+      } 
+    } catch (e) { }
 
     if (parsed) {
       initApp(parsed);
