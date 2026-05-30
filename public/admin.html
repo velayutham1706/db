@@ -575,7 +575,7 @@
     document.getElementById('cover-preview').innerHTML = '<span>Cover Art</span>';
     document.getElementById('id3-status').className = 'status-bar';
     document.getElementById('fetch-btn').disabled = true;
-    document.getElementById('add-btn').disabled = true;
+    document.getElementById('add-btn').disabled = false;
     document.getElementById('add-status').textContent = '';
     pendingCoverBlob = null;
     const maxOrder = tracks.reduce((m, t) => Math.max(m, t.order ?? 0), -1);
