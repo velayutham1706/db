@@ -3,105 +3,256 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DB Hi-Fi Admin</title>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <title>DB Hi-Fi — Admin</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <style>
     * { margin:0; padding:0; box-sizing:border-box }
-    :root { --ink:#0a0a0a; --bg:#fff; --bg2:#f4f4f4; --muted:#888; --border:#d0d0d0; --red:#c00 }
+    :root { --ink:#0a0a0a; --bg:#fff; --bg2:#f4f4f4; --bg3:#ebebeb; --muted:#888; --border:#d0d0d0; --border2:#bbb; --red:#c00; --green:#27ae60 }
     body { font-family:'JetBrains Mono',monospace; background:var(--bg2); color:var(--ink); min-height:100vh }
-    .header { background:var(--ink); color:#fff; padding:16px 24px; display:flex; justify-content:space-between; align-items:center }
-    .header h1 { font-size:16px; letter-spacing:3px; text-transform:uppercase }
-    .container { max-width:900px; margin:0 auto; padding:24px }
-    .card { background:var(--bg); border:2px solid var(--ink); margin-bottom:20px; overflow:hidden }
-    .card-header { background:var(--ink); color:#fff; padding:12px 16px; font-size:11px; letter-spacing:2px; text-transform:uppercase }
+
+    .header { background:var(--ink); color:#fff; padding:14px 24px; display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #333 }
+    .header h1 { font-size:14px; letter-spacing:3px; text-transform:uppercase }
+    .header-meta { font-size:10px; opacity:.4; letter-spacing:1px }
+
+    .container { max-width:960px; margin:0 auto; padding:24px 20px }
+
+    .card { background:var(--bg); border:2px solid var(--ink); margin-bottom:24px; overflow:hidden }
+    .card-header { background:var(--ink); color:#fff; padding:11px 16px; font-size:10px; letter-spacing:3px; text-transform:uppercase; display:flex; justify-content:space-between; align-items:center }
     .card-body { padding:20px }
+
     .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px }
-    .form-group { display:flex; flex-direction:column; gap:6px }
+    .form-group { display:flex; flex-direction:column; gap:5px }
     .form-group.full { grid-column:1/-1 }
     label { font-size:8px; letter-spacing:2px; text-transform:uppercase; color:var(--muted) }
-    input, select { border:2px solid var(--border); background:var(--bg); font-family:'JetBrains Mono',monospace; font-size:12px; padding:9px 12px; color:var(--ink); outline:none; width:100%; transition:.15s }
-    input:focus, select:focus { border-color:var(--ink) }
-    .btn { padding:10px 20px; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase; cursor:pointer; border:2px solid var(--ink); transition:.15s }
+
+    input, select, textarea {
+      border:2px solid var(--border);
+      background:var(--bg);
+      font-family:'JetBrains Mono',monospace;
+      font-size:12px;
+      padding:9px 12px;
+      color:var(--ink);
+      outline:none;
+      width:100%;
+      transition:.15s
+    }
+    input:focus, select:focus, textarea:focus { border-color:var(--ink) }
+    input.auto-filled { border-color:var(--green); background:#f0fff4 }
+    input:disabled { opacity:.5; cursor:not-allowed }
+
+    .url-wrap { position:relative }
+    .url-wrap input { padding-right:120px }
+    .fetch-btn {
+      position:absolute; right:0; top:0; bottom:0;
+      background:var(--ink); color:#fff; border:none;
+      padding:0 14px; font-family:'JetBrains Mono',monospace;
+      font-size:9px; letter-spacing:1px; text-transform:uppercase;
+      cursor:pointer; transition:.15s; white-space:nowrap
+    }
+    .fetch-btn:hover { background:#333 }
+    .fetch-btn:disabled { opacity:.5; cursor:not-allowed }
+
+    .cover-preview {
+      width:80px; height:80px; border:2px solid var(--border);
+      display:flex; align-items:center; justify-content:center;
+      overflow:hidden; background:var(--bg2); flex-shrink:0
+    }
+    .cover-preview img { width:100%; height:100%; object-fit:cover }
+    .cover-preview span { font-size:9px; color:var(--muted); text-align:center; padding:4px; letter-spacing:.5px }
+
+    .id3-row { display:flex; gap:14px; align-items:flex-start }
+    .id3-fields { flex:1; display:grid; grid-template-columns:1fr 1fr; gap:12px }
+
+    .status-bar {
+      padding:10px 14px; font-size:10px; letter-spacing:1px;
+      border-left:3px solid var(--border); background:var(--bg2);
+      margin-bottom:14px; display:none
+    }
+    .status-bar.loading { display:block; border-color:#f5a623; color:#a07000 }
+    .status-bar.success { display:block; border-color:var(--green); color:var(--green) }
+    .status-bar.error { display:block; border-color:var(--red); color:var(--red) }
+
+    .btn { padding:10px 20px; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase; cursor:pointer; border:2px solid var(--ink); transition:.15s; display:inline-flex; align-items:center; gap:6px }
     .btn-primary { background:var(--ink); color:#fff }
     .btn-primary:hover { background:#333 }
     .btn-primary:disabled { opacity:.5; cursor:not-allowed }
-    .btn-danger { background:transparent; color:var(--red); border-color:var(--red) }
+    .btn-ghost { background:transparent; color:var(--ink) }
+    .btn-ghost:hover { background:var(--ink); color:#fff }
+    .btn-danger { background:transparent; color:var(--red); border-color:var(--red); padding:5px 10px; font-size:9px }
     .btn-danger:hover { background:var(--red); color:#fff }
-    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; padding:10px 20px; font-size:11px; letter-spacing:1px; opacity:0; transition:.25s; pointer-events:none; z-index:1000 }
-    .toast.show { opacity:1 }
-    table { width:100%; border-collapse:collapse }
-    th { font-size:8px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); padding:8px 12px; text-align:left; border-bottom:2px solid var(--ink); background:var(--bg2) }
+    .btn-edit { background:transparent; color:var(--ink); border-color:var(--border2); padding:5px 10px; font-size:9px }
+    .btn-edit:hover { background:var(--ink); color:#fff }
+
+    .btn-row { display:flex; gap:10px; align-items:center; margin-top:16px; flex-wrap:wrap }
+
+    /* Track table */
+    .table-wrap { overflow-x:auto }
+    table { width:100%; border-collapse:collapse; min-width:700px }
+    th { font-size:8px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); padding:8px 12px; text-align:left; border-bottom:2px solid var(--ink); background:var(--bg2); white-space:nowrap }
     td { padding:10px 12px; border-bottom:1px solid var(--border); font-size:11px; vertical-align:middle }
     tr:hover td { background:var(--bg2) }
-    .url-cell { max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted) }
-    .order-input { width:50px; border:1px solid var(--border); padding:4px 6px; font-family:'JetBrains Mono',monospace; font-size:11px; text-align:center }
-    .auth-wall { position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; align-items:center; justify-content:center; z-index:9999 }
-    .auth-box { background:#fff; border:2px solid var(--ink); padding:32px; width:320px }
-    .auth-box h2 { font-size:14px; letter-spacing:2px; text-transform:uppercase; margin-bottom:20px }
-    .loading { color:var(--muted); font-size:11px; padding:20px; text-align:center; letter-spacing:1px }
-    .badge { font-size:8px; letter-spacing:1px; border:1px solid var(--border); padding:2px 6px; text-transform:uppercase; display:inline-block }
-    @media(max-width:600px) { .form-grid { grid-template-columns:1fr } .form-group.full { grid-column:1 } }
+    .track-art { width:36px; height:36px; object-fit:cover; border:1px solid var(--border); display:block }
+    .track-art-placeholder { width:36px; height:36px; border:1px solid var(--border); background:var(--bg2); display:flex; align-items:center; justify-content:center; font-size:16px }
+    .badge { font-size:8px; letter-spacing:1px; border:1px solid var(--border2); padding:2px 6px; text-transform:uppercase; display:inline-block; white-space:nowrap }
+    .url-cell { max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); font-size:10px }
+    .order-input { width:52px; border:1px solid var(--border); padding:4px 6px; font-family:'JetBrains Mono',monospace; font-size:11px; text-align:center; background:var(--bg) }
+
+    /* Edit modal */
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:3000; display:flex; align-items:center; justify-content:center; padding:20px }
+    .modal-box { background:var(--bg); border:2px solid var(--ink); width:100%; max-width:520px; max-height:90vh; overflow-y:auto }
+    .modal-header { background:var(--ink); color:#fff; padding:14px 18px; display:flex; justify-content:space-between; align-items:center }
+    .modal-header h3 { font-size:13px; letter-spacing:2px; text-transform:uppercase }
+    .modal-close { background:transparent; border:none; color:rgba(255,255,255,.5); font-size:20px; cursor:pointer; line-height:1 }
+    .modal-close:hover { color:#fff }
+    .modal-body { padding:20px }
+    .modal-footer { padding:14px 20px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end }
+
+    /* Auth wall */
+    .auth-wall { position:fixed; inset:0; background:rgba(0,0,0,.85); display:flex; align-items:center; justify-content:center; z-index:9999; backdrop-filter:blur(4px) }
+    .auth-box { background:var(--bg); border:2px solid var(--ink); padding:32px; width:320px }
+    .auth-box h2 { font-size:13px; letter-spacing:3px; text-transform:uppercase; margin-bottom:6px }
+    .auth-box p { font-size:10px; color:var(--muted); margin-bottom:20px; letter-spacing:.5px }
+
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(8px); background:var(--ink); color:#fff; padding:10px 20px; font-size:10px; letter-spacing:1px; opacity:0; transition:.25s; pointer-events:none; z-index:5000; border-left:3px solid rgba(255,255,255,.3) }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0) }
+
+    .empty-state { padding:40px 20px; text-align:center; color:var(--muted) }
+    .empty-state p { font-size:12px; margin-top:8px }
+
+    @media(max-width:600px) {
+      .form-grid, .id3-fields { grid-template-columns:1fr }
+      .form-group.full { grid-column:1 }
+      .id3-row { flex-direction:column }
+      .cover-preview { width:60px; height:60px }
+    }
   </style>
 </head>
 <body>
 
 <div class="auth-wall" id="auth-wall">
   <div class="auth-box">
-    <h2>Admin Access</h2>
+    <h2>DB Hi-Fi Admin</h2>
+    <p>Enter your admin password to continue</p>
     <div class="form-group" style="margin-bottom:14px">
       <label>Password</label>
-      <input type="password" id="admin-pass" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')checkPass()">
+      <input type="password" id="admin-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkPass()">
     </div>
-    <div id="pass-err" style="color:#c00;font-size:10px;margin-bottom:10px;display:none">Incorrect password</div>
-    <button class="btn btn-primary" onclick="checkPass()">Enter</button>
+    <div id="pass-err" style="color:var(--red);font-size:10px;margin-bottom:12px;display:none">Incorrect password</div>
+    <button class="btn btn-primary" style="width:100%" onclick="checkPass()">Enter</button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<div class="header">
-  <h1>DB Hi-Fi — Track Manager</h1>
-  <span id="track-count" style="font-size:10px;opacity:.5;letter-spacing:1px"></span>
-</div>
-
-<div class="container">
-  <!-- ADD TRACK FORM -->
-  <div class="card">
-    <div class="card-header">Add New Track</div>
-    <div class="card-body">
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-modal" style="display:none" onclick="if(event.target===this)closeEdit()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Edit Track</h3>
+      <button class="modal-close" onclick="closeEdit()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:16px">
+        <div class="cover-preview" id="edit-cover-preview"><span>No Cover</span></div>
+        <div style="flex:1">
+          <div class="form-group" style="margin-bottom:10px">
+            <label>Audio URL</label>
+            <input type="url" id="edit-url" placeholder="Cloudinary URL">
+          </div>
+        </div>
+      </div>
       <div class="form-grid">
-        <div class="form-group full">
-          <label>Cloudinary Audio URL *</label>
-          <input type="url" id="f-url" placeholder="https://res.cloudinary.com/..." oninput="extractFromUrl(this.value)">
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" id="edit-title">
         </div>
         <div class="form-group">
-          <label>Title *</label>
-          <input type="text" id="f-title" placeholder="Song title">
-        </div>
-        <div class="form-group">
-          <label>Artist *</label>
-          <input type="text" id="f-artist" placeholder="Artist name">
+          <label>Artist</label>
+          <input type="text" id="edit-artist">
         </div>
         <div class="form-group">
           <label>Album</label>
-          <input type="text" id="f-album" placeholder="Album name">
+          <input type="text" id="edit-album">
         </div>
         <div class="form-group">
           <label>Genre</label>
-          <input type="text" id="f-genre" placeholder="Bollywood, K-Pop, Pop...">
+          <input type="text" id="edit-genre">
         </div>
         <div class="form-group">
           <label>Language</label>
-          <input type="text" id="f-language" placeholder="Hindi, English, Korean...">
+          <input type="text" id="edit-language">
         </div>
         <div class="form-group">
-          <label>Order (display position)</label>
-          <input type="number" id="f-order" placeholder="1" min="0">
+          <label>Order</label>
+          <input type="number" id="edit-order" min="0">
         </div>
       </div>
-      <div style="margin-top:16px;display:flex;gap:10px;align-items:center">
-        <button class="btn btn-primary" id="add-btn" onclick="addTrack()">+ Add Track</button>
-        <button class="btn" onclick="clearForm()" style="background:transparent">Clear</button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeEdit()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<div class="header">
+  <h1>DB Hi-Fi — Track Manager</h1>
+  <span class="header-meta" id="track-count">Loading...</span>
+</div>
+
+<div class="container">
+
+  <!-- ADD TRACK -->
+  <div class="card">
+    <div class="card-header">Add New Track</div>
+    <div class="card-body">
+
+      <div class="form-group full" style="margin-bottom:14px">
+        <label>Cloudinary Audio URL — paste URL to auto-read ID3 tags</label>
+        <div class="url-wrap">
+          <input type="url" id="f-url" placeholder="https://res.cloudinary.com/..." oninput="onUrlInput(this.value)">
+          <button class="fetch-btn" id="fetch-btn" onclick="fetchId3()">Read Tags</button>
+        </div>
+      </div>
+
+      <div class="status-bar" id="id3-status"></div>
+
+      <div class="id3-row">
+        <div class="cover-preview" id="cover-preview">
+          <span>Cover Art</span>
+        </div>
+        <div class="id3-fields">
+          <div class="form-group">
+            <label>Title</label>
+            <input type="text" id="f-title" placeholder="Auto-filled from ID3">
+          </div>
+          <div class="form-group">
+            <label>Artist</label>
+            <input type="text" id="f-artist" placeholder="Auto-filled from ID3">
+          </div>
+          <div class="form-group">
+            <label>Album</label>
+            <input type="text" id="f-album" placeholder="Auto-filled from ID3">
+          </div>
+          <div class="form-group">
+            <label>Genre</label>
+            <input type="text" id="f-genre" placeholder="Auto-filled from ID3">
+          </div>
+          <div class="form-group">
+            <label>Language <span style="opacity:.5;font-size:7px">(manual)</span></label>
+            <input type="text" id="f-language" placeholder="Hindi, English, Korean...">
+          </div>
+          <div class="form-group">
+            <label>Order</label>
+            <input type="number" id="f-order" placeholder="0" min="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="add-btn" onclick="addTrack()" disabled>+ Add Track</button>
+        <button class="btn btn-ghost" onclick="clearForm()">Clear</button>
         <span id="add-status" style="font-size:10px;color:var(--muted)"></span>
       </div>
     </div>
@@ -109,22 +260,29 @@
 
   <!-- TRACK LIST -->
   <div class="card">
-    <div class="card-header">All Tracks</div>
+    <div class="card-header">
+      <span>All Tracks</span>
+      <span id="list-count" style="opacity:.5;font-size:9px"></span>
+    </div>
     <div id="track-list-wrap">
-      <div class="loading">Loading tracks...</div>
+      <div class="empty-state">
+        <div style="font-size:32px">🎵</div>
+        <p>Loading tracks...</p>
+      </div>
     </div>
   </div>
+
 </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
   import {
-    getFirestore, collection, getDocs, addDoc, deleteDoc, updateDoc,
-    doc, query, orderBy, serverTimestamp
+    getFirestore, collection, getDocs, addDoc, deleteDoc,
+    updateDoc, doc, query, orderBy, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
-  // ── AUTH WALL ──
-  const ADMIN_PASS = '15072003';
+  // ── PASSWORD ──
+  const ADMIN_PASS = 'dbhifi2025'; // Change this to something strong!
   window.checkPass = function() {
     const v = document.getElementById('admin-pass').value;
     if (v === ADMIN_PASS) {
@@ -132,17 +290,24 @@
       init();
     } else {
       document.getElementById('pass-err').style.display = 'block';
+      document.getElementById('admin-pass').value = '';
+      document.getElementById('admin-pass').focus();
     }
   };
 
-  let db, tracks = [];
+  let db, tracks = [], editDocId = null;
+  let pendingCoverBlob = null; // base64 of cover art from ID3
 
   async function init() {
-    const res = await fetch('/api/firebase-config');
-    const config = await res.json();
-    const app = initializeApp(config);
-    db = getFirestore(app);
-    await loadTracks();
+    try {
+      const res = await fetch('/api/firebase-config');
+      const config = await res.json();
+      const app = initializeApp(config);
+      db = getFirestore(app);
+      await loadTracks();
+    } catch(e) {
+      showToast('Failed to connect: ' + e.message);
+    }
   }
 
   async function loadTracks() {
@@ -151,120 +316,275 @@
       const snap = await getDocs(q);
       tracks = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
       renderTable();
-      document.getElementById('track-count').textContent = `${tracks.length} tracks`;
-      // Auto-set order for new track
-      const maxOrder = tracks.reduce((m, t) => Math.max(m, t.order || 0), 0);
+      const n = tracks.length;
+      document.getElementById('track-count').textContent = `${n} track${n !== 1 ? 's' : ''}`;
+      document.getElementById('list-count').textContent = `${n} tracks`;
+      // Set default order for next track
+      const maxOrder = tracks.reduce((m, t) => Math.max(m, t.order ?? 0), -1);
       document.getElementById('f-order').value = maxOrder + 1;
     } catch(e) {
-      document.getElementById('track-list-wrap').innerHTML = `<div class="loading" style="color:#c00">Error: ${e.message}</div>`;
+      document.getElementById('track-list-wrap').innerHTML = `<div class="empty-state" style="color:var(--red)"><p>Error loading tracks: ${e.message}</p></div>`;
     }
   }
 
   function renderTable() {
     if (!tracks.length) {
-      document.getElementById('track-list-wrap').innerHTML = '<div class="loading">No tracks yet. Add one above.</div>';
+      document.getElementById('track-list-wrap').innerHTML = `<div class="empty-state"><div style="font-size:32px">🎵</div><p>No tracks yet. Add your first track above.</p></div>`;
       return;
     }
     document.getElementById('track-list-wrap').innerHTML = `
-      <div style="overflow-x:auto">
+      <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>Order</th><th>Title</th><th>Artist</th><th>Genre</th><th>Language</th><th>Album</th><th>URL</th><th></th>
+            <th>#</th><th></th><th>Title</th><th>Artist</th><th>Genre</th><th>Language</th><th>Album</th><th>URL</th><th>Actions</th>
           </tr></thead>
           <tbody>${tracks.map((t, i) => `
             <tr>
               <td><input class="order-input" type="number" value="${t.order ?? i}" onchange="updateOrder('${t._docId}', this.value)"></td>
-              <td><strong>${t.title}</strong></td>
+              <td>${t.coverUrl
+                ? `<img class="track-art" src="${t.coverUrl}" alt="${t.title}">`
+                : `<div class="track-art-placeholder">🎵</div>`
+              }</td>
+              <td><strong style="font-size:12px">${t.title}</strong></td>
               <td>${t.artist}</td>
               <td><span class="badge">${t.genre || '—'}</span></td>
               <td>${t.language || '—'}</td>
-              <td>${t.album || '—'}</td>
-              <td class="url-cell" title="${t.url}">${t.url}</td>
-              <td><button class="btn btn-danger" style="padding:5px 10px;font-size:9px" onclick="deleteTrack('${t._docId}', '${t.title.replace(/'/g,"\\'")}')">✕</button></td>
+              <td style="font-size:10px;color:var(--muted)">${t.album || '—'}</td>
+              <td><div class="url-cell" title="${t.url}">${t.url}</div></td>
+              <td style="white-space:nowrap;display:flex;gap:6px">
+                <button class="btn btn-edit" onclick="openEdit('${t._docId}')">✎ Edit</button>
+                <button class="btn btn-danger" onclick="deleteTrack('${t._docId}', '${(t.title||'').replace(/'/g,"\\'")}')">✕</button>
+              </td>
             </tr>`).join('')}
           </tbody>
         </table>
       </div>`;
   }
 
-  window.addTrack = async function() {
+  // ── ID3 READING ──
+  let urlDebounce = null;
+  window.onUrlInput = function(val) {
+    // Enable fetch button when URL looks valid
+    const btn = document.getElementById('fetch-btn');
+    btn.disabled = !val.includes('cloudinary.com');
+    // Auto-fetch after 800ms pause
+    clearTimeout(urlDebounce);
+    if (val.includes('cloudinary.com')) {
+      urlDebounce = setTimeout(() => fetchId3(), 800);
+    }
+  };
+
+  window.fetchId3 = function() {
     const url = document.getElementById('f-url').value.trim();
-    const title = document.getElementById('f-title').value.trim();
+    if (!url) return;
+
+    setStatus('loading', 'Reading ID3 tags from audio file...');
+    document.getElementById('fetch-btn').disabled = true;
+    pendingCoverBlob = null;
+
+    window.jsmediatags.read(url, {
+      onSuccess(tag) {
+        const tags = tag.tags || {};
+        autoFill('f-title',  tags.title  || '');
+        autoFill('f-artist', tags.artist || '');
+        autoFill('f-album',  tags.album  || '');
+
+        // Genre — ID3 sometimes wraps it like "(17)Rock"
+        let genre = tags.genre || '';
+        genre = genre.replace(/^\(\d+\)/, '').trim();
+        autoFill('f-genre', genre);
+
+        // Cover art
+        const pic = tags.picture;
+        if (pic) {
+          const blob = new Blob([new Uint8Array(pic.data)], { type: pic.format });
+          const blobUrl = URL.createObjectURL(blob);
+          // Store as base64 for Firestore
+          const reader = new FileReader();
+          reader.onload = () => {
+            pendingCoverBlob = reader.result; // base64 data URL
+            const preview = document.getElementById('cover-preview');
+            preview.innerHTML = `<img src="${pendingCoverBlob}" alt="cover">`;
+          };
+          reader.readAsDataURL(blob);
+        } else {
+          document.getElementById('cover-preview').innerHTML = '<span>No Cover</span>';
+        }
+
+        const filled = [tags.title, tags.artist, tags.album, tags.genre].filter(Boolean).length;
+        setStatus('success', `✓ ID3 tags read — ${filled} fields auto-filled. Language needs manual entry.`);
+        document.getElementById('add-btn').disabled = false;
+        document.getElementById('fetch-btn').disabled = false;
+      },
+      onError(err) {
+        setStatus('error', `Could not read ID3 tags: ${err.info || err.type || 'Unknown error'}. You can still fill fields manually.`);
+        document.getElementById('add-btn').disabled = false;
+        document.getElementById('fetch-btn').disabled = false;
+        // Try to extract from filename as fallback
+        extractFromFilename(url);
+      }
+    });
+  };
+
+  function extractFromFilename(url) {
+    const filename = url.split('/').pop().replace(/\.[^.]+$/, '').replace(/_[a-z0-9]{6,}$/, '');
+    const clean = filename.replace(/_/g, ' ');
+    const parts = clean.split(' - ');
+    if (parts.length >= 2) {
+      if (!document.getElementById('f-title').value) autoFill('f-title', parts[0].trim());
+      if (!document.getElementById('f-artist').value) autoFill('f-artist', parts.slice(1).join(' - ').trim());
+    } else {
+      if (!document.getElementById('f-title').value) autoFill('f-title', clean.trim());
+    }
+  }
+
+  function autoFill(id, val) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = val;
+    if (val) {
+      el.classList.add('auto-filled');
+      setTimeout(() => el.classList.remove('auto-filled'), 2000);
+    }
+  }
+
+  function setStatus(type, msg) {
+    const el = document.getElementById('id3-status');
+    el.className = `status-bar ${type}`;
+    el.textContent = msg;
+  }
+
+  // ── ADD TRACK ──
+  window.addTrack = async function() {
+    const url    = document.getElementById('f-url').value.trim();
+    const title  = document.getElementById('f-title').value.trim();
     const artist = document.getElementById('f-artist').value.trim();
-    if (!url || !title || !artist) { toast('URL, Title and Artist are required'); return; }
+
+    if (!url)    { showToast('Please enter a Cloudinary URL'); return; }
+    if (!title)  { showToast('Title is required'); document.getElementById('f-title').focus(); return; }
+    if (!artist) { showToast('Artist is required'); document.getElementById('f-artist').focus(); return; }
 
     const btn = document.getElementById('add-btn');
+    const status = document.getElementById('add-status');
     btn.disabled = true;
-    document.getElementById('add-status').textContent = 'Saving...';
+    status.textContent = 'Saving to Firestore...';
 
-    const maxId = tracks.reduce((m, t) => Math.max(m, t.id ?? 0), -1);
+    const maxId = tracks.reduce((m, t) => Math.max(m, t.id ?? -1), -1);
+    const order = parseInt(document.getElementById('f-order').value) || maxId + 1;
 
     try {
       await addDoc(collection(db, 'tracks'), {
-        id: maxId + 1,
+        id:       maxId + 1,
         title,
         artist,
-        album: document.getElementById('f-album').value.trim() || '',
-        genre: document.getElementById('f-genre').value.trim() || '',
+        album:    document.getElementById('f-album').value.trim() || '',
+        genre:    document.getElementById('f-genre').value.trim() || '',
         language: document.getElementById('f-language').value.trim() || '',
         url,
-        coverUrl: null,
-        order: parseInt(document.getElementById('f-order').value) || maxId + 1,
-        addedAt: serverTimestamp()
+        coverUrl: pendingCoverBlob || null,
+        order,
+        addedAt:  serverTimestamp()
       });
-      toast('Track added!');
+
+      showToast(`✓ "${title}" added!`);
       clearForm();
       await loadTracks();
     } catch(e) {
-      toast('Error: ' + e.message);
-    } finally {
+      showToast('Error saving: ' + e.message);
       btn.disabled = false;
-      document.getElementById('add-status').textContent = '';
     }
+    status.textContent = '';
   };
 
+  // ── DELETE ──
   window.deleteTrack = async function(docId, title) {
-    if (!confirm(`Delete "${title}"?`)) return;
+    if (!confirm(`Delete "${title}"?\n\nThis cannot be undone.`)) return;
     try {
       await deleteDoc(doc(db, 'tracks', docId));
-      toast('Deleted');
+      showToast(`Deleted "${title}"`);
       await loadTracks();
-    } catch(e) { toast('Error: ' + e.message); }
+    } catch(e) { showToast('Error: ' + e.message); }
   };
 
+  // ── ORDER ──
   window.updateOrder = async function(docId, val) {
     try {
       await updateDoc(doc(db, 'tracks', docId), { order: parseInt(val) || 0 });
-      toast('Order updated');
-    } catch(e) { toast('Error: ' + e.message); }
+      showToast('Order updated');
+    } catch(e) { showToast('Error: ' + e.message); }
   };
 
-  // Auto-extract title/artist from Cloudinary filename
-  window.extractFromUrl = function(url) {
-    if (!url.includes('cloudinary.com')) return;
-    const filename = url.split('/').pop().replace(/\.[^.]+$/, '');
-    // Format: Song_Name_-_Artist_Name_abc123
-    const clean = filename.replace(/_[a-z0-9]{6,}$/, '').replace(/_/g, ' ');
-    const parts = clean.split(' - ');
-    if (parts.length >= 2) {
-      if (!document.getElementById('f-title').value) document.getElementById('f-title').value = parts[0].trim();
-      if (!document.getElementById('f-artist').value) document.getElementById('f-artist').value = parts[1].trim();
-    } else {
-      if (!document.getElementById('f-title').value) document.getElementById('f-title').value = clean.trim();
-    }
+  // ── EDIT MODAL ──
+  window.openEdit = function(docId) {
+    const t = tracks.find(x => x._docId === docId);
+    if (!t) return;
+    editDocId = docId;
+
+    document.getElementById('edit-url').value      = t.url || '';
+    document.getElementById('edit-title').value    = t.title || '';
+    document.getElementById('edit-artist').value   = t.artist || '';
+    document.getElementById('edit-album').value    = t.album || '';
+    document.getElementById('edit-genre').value    = t.genre || '';
+    document.getElementById('edit-language').value = t.language || '';
+    document.getElementById('edit-order').value    = t.order ?? 0;
+
+    const cp = document.getElementById('edit-cover-preview');
+    cp.innerHTML = t.coverUrl
+      ? `<img src="${t.coverUrl}" alt="${t.title}" style="width:100%;height:100%;object-fit:cover">`
+      : '<span>No Cover</span>';
+
+    document.getElementById('edit-modal').style.display = 'flex';
   };
 
+  window.closeEdit = function() {
+    document.getElementById('edit-modal').style.display = 'none';
+    editDocId = null;
+  };
+
+  window.saveEdit = async function() {
+    if (!editDocId) return;
+    const data = {
+      url:      document.getElementById('edit-url').value.trim(),
+      title:    document.getElementById('edit-title').value.trim(),
+      artist:   document.getElementById('edit-artist').value.trim(),
+      album:    document.getElementById('edit-album').value.trim(),
+      genre:    document.getElementById('edit-genre').value.trim(),
+      language: document.getElementById('edit-language').value.trim(),
+      order:    parseInt(document.getElementById('edit-order').value) || 0,
+    };
+    if (!data.title || !data.artist) { showToast('Title and Artist are required'); return; }
+    try {
+      await updateDoc(doc(db, 'tracks', editDocId), data);
+      showToast('✓ Track updated');
+      closeEdit();
+      await loadTracks();
+    } catch(e) { showToast('Error: ' + e.message); }
+  };
+
+  // ── CLEAR FORM ──
   window.clearForm = function() {
-    ['f-url','f-title','f-artist','f-album','f-genre','f-language'].forEach(id => document.getElementById(id).value = '');
-    const maxOrder = tracks.reduce((m, t) => Math.max(m, t.order || 0), 0);
+    ['f-url','f-title','f-artist','f-album','f-genre','f-language'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    document.getElementById('cover-preview').innerHTML = '<span>Cover Art</span>';
+    document.getElementById('id3-status').className = 'status-bar';
+    document.getElementById('fetch-btn').disabled = true;
+    document.getElementById('add-btn').disabled = true;
+    document.getElementById('add-status').textContent = '';
+    pendingCoverBlob = null;
+    const maxOrder = tracks.reduce((m, t) => Math.max(m, t.order ?? 0), -1);
     document.getElementById('f-order').value = maxOrder + 1;
   };
 
-  function toast(msg) {
+  // ── TOAST ──
+  function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg; t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2500);
   }
+  window.showToast = showToast;
+
 </script>
 </body>
 </html>
