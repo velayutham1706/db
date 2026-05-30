@@ -280,6 +280,9 @@
     getFirestore, collection, getDocs, addDoc, deleteDoc,
     updateDoc, doc, query, orderBy, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+  import {
+  getAuth, signInWithEmailAndPassword
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
 
   // ── PASSWORD ──
   const ADMIN_PASS = '15072003';
@@ -304,6 +307,8 @@
       const config = await res.json();
       const app = initializeApp(config);
       db = getFirestore(app);
+      const auth = getAuth(app);
+      await signInWithEmailAndPassword(auth, "admin@dbhifi.com", "!@#Dbhifi15072003");
       await loadTracks();
     } catch(e) {
       showToast('Failed to connect: ' + e.message);
