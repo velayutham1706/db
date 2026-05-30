@@ -2402,6 +2402,20 @@
 
       let authMode = 'login';
 
+      getRedirectResult(auth)
+      .then(result => {
+        if (result?.user) {
+          _googleSignInPending = false;
+        }
+      })
+      .catch(e => {
+        _googleSignInPending = false;
+        if (e.code && e.code !== 'auth/no-current-user') {
+          console.error('Redirect result error:', e.code, e.message);
+          showAuthError(friendlyAuthError(e.code));
+        }
+      });
+
       function switchAuthTab(mode) {
         authMode = mode;
         document.getElementById('tab-login').classList.toggle('active', mode === 'login');
@@ -2434,29 +2448,35 @@
       }
       window.authSubmit = authSubmit;
 
+      function isMobile() {
+        return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+      }
+
       function googleSignIn() {
         if (_googleSignInPending) return;
         _googleSignInPending = true;
         clearAuthError();
-        
+
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
-        
-        signInWithPopup(auth, provider)
-          .then(() => { 
-            _googleSignInPending = false; 
-          })
-          .catch(e => {
+
+        if (isMobile()) {
+          signInWithRedirect(auth, provider).catch(e => {
             _googleSignInPending = false;
-            
-            console.error('Google Sign-In error code:', e.code, e.message);
-            
-            if (e.code === 'auth/popup-closed-by-user' || 
-                e.code === 'auth/cancelled-popup-request') {
-              return;
-            }
+            console.error('Google redirect error:', e.code, e.message);
             showAuthError(friendlyAuthError(e.code));
           });
+        } else {
+          signInWithPopup(auth, provider)
+            .then(() => { _googleSignInPending = false; })
+            .catch(e => {
+              _googleSignInPending = false;
+              console.error('Google Sign-In error:', e.code, e.message);
+              if (e.code === 'auth/popup-closed-by-user' ||
+                  e.code === 'auth/cancelled-popup-request') return;
+              showAuthError(friendlyAuthError(e.code));
+            });
+        }
       }
 
       document.getElementById('google-signin-btn').addEventListener('click', googleSignIn);
@@ -2479,6 +2499,7 @@
           'auth/operation-not-allowed': 'Google sign-in is not enabled. Check Firebase Console.',
           'auth/internal-error': 'An internal error occurred. Check browser console for details.',
           'auth/unauthorized-domain': 'This domain is not authorized. Add it in Firebase Console → Authentication → Authorized domains.',
+          'auth/popup-blocked': 'Popup blocked. Please allow popups for this site in your browser settings, then try again.',
         };
         return map[code] || 'Something went wrong. Please try again.';
       }
