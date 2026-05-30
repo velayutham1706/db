@@ -356,7 +356,7 @@
               <td>${t.language || '—'}</td>
               <td style="font-size:10px;color:var(--muted)">${t.album || '—'}</td>
               <td><div class="url-cell" title="${t.url}">${t.url}</div></td>
-              <td style="white-space:nowrap;display:flex;gap:6px">
+              <td style="white-space:nowrap;gap:6px">
                 <button class="btn btn-edit" onclick="openEdit('${t._docId}')">✎ Edit</button>
                 <button class="btn btn-danger" onclick="deleteTrack('${t._docId}', '${(t.title||'').replace(/'/g,"\\'")}')">✕</button>
               </td>
