@@ -69,10 +69,33 @@
       text-transform: uppercase
     }
 
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 14px
+    }
+
     .header-meta {
       font-size: 10px;
       opacity: .4;
       letter-spacing: 1px
+    }
+
+    .logout-btn {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, .3);
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 5px 10px;
+      cursor: pointer;
+      border-radius: 5px
+    }
+
+    .logout-btn:hover {
+      background: rgba(255, 255, 255, .1)
     }
 
     .container {
@@ -611,20 +634,24 @@
   <div class="auth-wall" id="auth-wall">
     <div class="auth-box">
       <h2>DB Hi-Fi Admin</h2>
-      <p>Enter your admin password to continue</p>
+      <p>Sign in with your admin account</p>
+      <div class="form-group" style="margin-bottom:10px">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="admin@dbhifi.com" autocomplete="username"
+          onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+      </div>
       <div class="form-group" style="margin-bottom:14px">
         <label>Password</label>
-        <input type="password" id="admin-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkPass()">
+        <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter')doLogin()">
       </div>
-      <div id="pass-err" style="color:var(--red);font-size:10px;margin-bottom:12px;display:none">Incorrect password
-      </div>
-      <button class="btn btn-primary" style="width:100%" onclick="checkPass()">Enter</button>
+      <div id="login-err" style="color:var(--red);font-size:10px;margin-bottom:12px;display:none"></div>
+      <button class="btn btn-primary" style="width:100%" id="login-btn" onclick="doLogin()">Sign In</button>
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
 
-  <!-- EDIT MODAL -->
   <div class="modal-overlay" id="edit-modal" style="display:none" onclick="if(event.target===this)closeEdit()">
     <div class="modal-box">
       <div class="modal-header">
@@ -677,12 +704,14 @@
 
   <div class="header">
     <h1>DB Hi-Fi — Track Manager</h1>
-    <span class="header-meta" id="track-count">Loading...</span>
+    <div class="header-right">
+      <span class="header-meta" id="track-count">Loading...</span>
+      <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+    </div>
   </div>
 
   <div class="container">
 
-    <!-- ADD TRACK -->
     <div class="card">
       <div class="card-header">Add New Track</div>
       <div class="card-body">
@@ -745,7 +774,6 @@
       </div>
     </div>
 
-    <!-- TRACK LIST -->
     <div class="card">
       <div class="card-header">
         <span>All Tracks</span>

@@ -4,43 +4,93 @@ import {
   updateDoc, doc, query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 import {
-  getAuth, signInWithEmailAndPassword
+  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
 
-// NOTE: this is a client-side gate only — it keeps casual visitors out,
-// it does not stop anyone who opens dev tools. Real write protection
-// has to come from Firestore security rules tied to an authenticated
-// admin UID. Worth tightening separately from this upload feature.
-const ADMIN_PASS = '15072003';
-window.checkPass = function() {
-  const v = document.getElementById('admin-pass').value;
-  if (v === ADMIN_PASS) {
-    document.getElementById('auth-wall').style.display = 'none';
-    init();
-  } else {
-    document.getElementById('pass-err').style.display = 'block';
-    document.getElementById('admin-pass').value = '';
-    document.getElementById('admin-pass').focus();
-  }
-};
-
-let db, tracks = [], editDocId = null;
-let pendingCoverBlob = null;   // base64 cover art from ID3
-let uploadedUrl = null;        // secure_url once Cloudinary upload finishes
+let db, auth, tracks = [], editDocId = null;
+let pendingCoverBlob = null; // base64 cover art from ID3
+let uploadedUrl = null;
 let uploadInFlight = false;
 
-async function init() {
+bootstrap();
+
+async function bootstrap() {
   try {
     const res = await fetch('/api/firebase-config');
     const config = await res.json();
     const app = initializeApp(config);
     db = getFirestore(app);
-    const auth = getAuth(app);
-    await signInWithEmailAndPassword(auth, "admin@dbhifi.com", "!@#Dbhifi15072003");
-    await loadTracks();
+    auth = getAuth(app);
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById('auth-wall').style.display = 'none';
+        loadTracks();
+      } else {
+        document.getElementById('auth-wall').style.display = 'flex';
+      }
+    });
   } catch (e) {
-    showToast('Failed to connect: ' + e.message);
+    showLoginError('Failed to connect: ' + e.message);
   }
+}
+
+window.doLogin = async function() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-pass').value;
+  const btn = document.getElementById('login-btn');
+
+  if (!email || !password) {
+    showLoginError('Enter both email and password');
+    return;
+  }
+
+  btn.disabled = true;
+  hideLoginError();
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    document.getElementById('login-pass').value = '';
+    // onAuthStateChanged handles hiding the auth wall and loading tracks
+  } catch (e) {
+    showLoginError(friendlyAuthError(e.code));
+  }
+  btn.disabled = false;
+};
+
+window.doLogout = async function() {
+  try {
+    await signOut(auth);
+    tracks = [];
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-pass').value = '';
+  } catch (e) {
+    showToast('Error signing out: ' + e.message);
+  }
+};
+
+function friendlyAuthError(code) {
+  switch (code) {
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password':
+    case 'auth/user-not-found':
+      return 'Incorrect email or password';
+    case 'auth/too-many-requests':
+      return 'Too many attempts — try again later';
+    case 'auth/invalid-email':
+      return 'That email address looks invalid';
+    default:
+      return 'Sign-in failed — ' + (code || 'unknown error');
+  }
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('login-err');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideLoginError() {
+  document.getElementById('login-err').style.display = 'none';
 }
 
 async function loadTracks() {
@@ -131,7 +181,6 @@ function handleFile(file) {
   setStatus('loading', `Reading tags from ${file.name}...`);
   document.getElementById('dz-filename').textContent = file.name;
 
-  // Reading ID3 tags directly off the local file
   window.jsmediatags.read(file, {
     onSuccess(tag) {
       const tags = tag.tags || {};
@@ -158,7 +207,6 @@ function handleFile(file) {
       }
     },
     onError(err) {
-      // Not fatal — fields can still be filled manually.
       console.warn('ID3 read failed:', err);
     }
   });
@@ -234,7 +282,6 @@ function setStatus(type, msg) {
   el.textContent = msg;
 }
 
-// ── ADD TRACK ──
 window.addTrack = async function() {
   const url = document.getElementById('f-url').value.trim();
   const title = document.getElementById('f-title').value.trim();
@@ -286,6 +333,7 @@ window.deleteTrack = async function(docId, title) {
   } catch (e) { showToast('Error: ' + e.message); }
 };
 
+// ── ORDER ──
 window.updateOrder = async function(docId, val) {
   try {
     await updateDoc(doc(db, 'tracks', docId), { order: parseInt(val) || 0 });
@@ -293,7 +341,6 @@ window.updateOrder = async function(docId, val) {
   } catch (e) { showToast('Error: ' + e.message); }
 };
 
-// ── EDIT MODAL ──
 window.openEdit = function(docId) {
   const t = tracks.find(x => x._docId === docId);
   if (!t) return;
